@@ -53,32 +53,17 @@
 
 #include <IRremote.h>
 
-int SEND_BUTTON_PIN = APPLICATION_PIN;
 int STATUS_PIN = LED_BUILTIN;
-
-int DELAY_BETWEEN_REPEAT = 50;
 
 // On the Zero and others we switch explicitly to SerialUSB
 #if defined(ARDUINO_ARCH_SAMD)
 #define Serial SerialUSB
 #endif
 
-// Storage for the recorded code
-struct storedIRDataStruct {
-    IRData receivedIRData;
-    // extensions for sendRaw
-    uint8_t rawCode[RAW_BUFFER_LENGTH]; // The durations if raw
-    uint8_t rawCodeLength; // The length of the code
-} sStoredIRData;
-
-int lastButtonState;
-
-void storeCode(IRData *aIRReceivedData);
-void sendCode(storedIRDataStruct *aIRDataToSend);
-
-void setup() {
+void setup()
+{
     Serial.begin(115200);
-#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL)  || defined(ARDUINO_attiny3217)
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL) || defined(ARDUINO_attiny3217)
     delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
 #endif
     // Just to know which program is running on my Arduino
@@ -89,9 +74,6 @@ void setup() {
     IrSender.begin(IR_SEND_PIN, ENABLE_LED_FEEDBACK); // Specify send pin and enable feedback LED at default feedback LED pin
 
     pinMode(STATUS_PIN, OUTPUT);
-    pinMode(SEND_BUTTON_PIN, INPUT_PULLUP);
-    
-    Serial.println(STATUS_PIN);
 
     Serial.print(F("Ready to receive IR signals at pin "));
 #if defined(ARDUINO_ARCH_STM32) || defined(ESP8266)
@@ -106,127 +88,58 @@ void setup() {
 #else
     Serial.print(IR_SEND_PIN);
 #endif
-    Serial.print(F(" on press of button at pin "));
-    Serial.println(SEND_BUTTON_PIN);
-
 }
 
-void loop() {
-
-    // If button pressed, send the code.
-    int buttonState = digitalRead(SEND_BUTTON_PIN); // Button pin is active LOW
-
-    /*
-     * Check for button just released in order to activate receiving
-     */
-    if (lastButtonState == LOW && buttonState == HIGH) {
-        // Re-enable receiver
-        Serial.println(F("Button released"));
-        IrReceiver.start();
-    }
-
-    /*
-     * Check for static button state
-     */
-    if (buttonState == LOW) {
-        IrReceiver.stop();
-        /*
-         * Button pressed send stored data or repeat
-         */
-        Serial.println(F("Button pressed, now sending"));
-        digitalWrite(STATUS_PIN, HIGH);
-//        if (lastButtonState == buttonState) {
-//            sStoredIRData.receivedIRData.flags = IRDATA_FLAGS_IS_REPEAT;
-//        }
-        sendCode(&sStoredIRData);
-        digitalWrite(STATUS_PIN, LOW);
-        delay(DELAY_BETWEEN_REPEAT); // Wait a bit between retransmissions
-
-        /*
-         * Button is not pressed, check for incoming data
-         */
-    } else if (IrReceiver.available()) {
-        storeCode(IrReceiver.read());
-        IrReceiver.resume(); // resume receiver
-    }
-
-    lastButtonState = buttonState;
-}
-
-// Stores the code for later playback in sStoredIRData
-// Most of this code is just logging
-void storeCode(IRData *aIRReceivedData) {
-    if (aIRReceivedData->flags & IRDATA_FLAGS_IS_REPEAT) {
-        Serial.println(F("Ignore repeat"));
-        return;
-    }
-    if (aIRReceivedData->flags & IRDATA_FLAGS_IS_AUTO_REPEAT) {
-        Serial.println(F("Ignore autorepeat"));
-        return;
-    }
-    if (aIRReceivedData->flags & IRDATA_FLAGS_PARITY_FAILED) {
-        Serial.println(F("Ignore parity error"));
-        return;
-    }
-    /*
-     * Copy decoded data
-     */
-    sStoredIRData.receivedIRData = *aIRReceivedData;
-
-    if (sStoredIRData.receivedIRData.protocol == UNKNOWN) {
-        Serial.print(F("Received unknown code and store "));
-        Serial.print(IrReceiver.decodedIRData.rawDataPtr->rawlen - 1);
-        Serial.println(F(" timing entries as raw "));
-        IrReceiver.printIRResultRawFormatted(&Serial, true); // Output the results in RAW format
-        sStoredIRData.rawCodeLength = IrReceiver.decodedIRData.rawDataPtr->rawlen - 1;
-        /*
-         * Store the current raw data in a dedicated array for later usage
-         */
-        IrReceiver.compensateAndStoreIRResultInArray(sStoredIRData.rawCode);
-    } else {
+void loop()
+{
+    if (IrReceiver.decode())
+    {
+        // Print a short summary of received data
         IrReceiver.printIRResultShort(&Serial);
-        sStoredIRData.receivedIRData.flags = 0; // clear flags -esp. repeat- for later sending
-        Serial.println();
+        if (IrReceiver.decodedIRData.protocol == UNKNOWN)
+        {
+            // We have an unknown protocol here, print more info
+            IrReceiver.printIRResultRawFormatted(&Serial, true);
+        }
+
+        //  Finally, check the received data and perform actions according to the received command
+        if (IrReceiver.decodedIRData.address == 0xEF00 && IrReceiver.decodedIRData.command == 0x1A)
+        {
+            Serial.println(F("Data matched! Now sending..."));
+            digitalWrite(STATUS_PIN, HIGH);
+            sendCodeSet();
+            digitalWrite(STATUS_PIN, LOW);
+        }
+
+        // Enable receiving of the next value
+        IrReceiver.resume();
     }
 }
 
+void sendCode(uint16_t sAddress,
+              uint16_t sCommand)
+{
+    Serial.print(F("Send now: address=0x"));
+    Serial.print(sAddress, HEX);
+    Serial.print(F(" command=0x"));
+    Serial.println(sCommand, HEX);
+    IrSender.sendNEC(sAddress, sCommand, NO_REPEATS);
+}
 
-
-void sendCode(storedIRDataStruct *aIRDataToSend) {
+void sendCodeSet()
+{
     uint16_t sAddress = 0xC7EA;
-    // uint8_t sCommand = 0x90;
-    IrSender.sendNEC(sAddress, 0x99, NO_REPEATS);
+    sendCode(sAddress, 0x99);
     delay(100);
-    IrSender.sendNEC(sAddress, 0xAD, NO_REPEATS);
+    sendCode(sAddress, 0xAD);
     delay(100);
-    IrSender.sendNEC(sAddress, 0xAD, NO_REPEATS);
+    sendCode(sAddress, 0xAD);
     delay(100);
-    IrSender.sendNEC(sAddress, 0xAA, NO_REPEATS);
+    sendCode(sAddress, 0xAA);
     delay(100);
-    IrSender.sendNEC(sAddress, 0xAA, NO_REPEATS);
+    sendCode(sAddress, 0xAA);
     delay(100);
-    IrSender.sendNEC(sAddress, 0x9E, NO_REPEATS);
+    sendCode(sAddress, 0x9E);
     delay(300);
-    IrSender.sendNEC(sAddress, 0x99, NO_REPEATS);
-    // if (aIRDataToSend->receivedIRData.protocol == UNKNOWN /* i.e. raw */) {
-    //     // Assume 38 KHz
-    //     IrSender.sendRaw(aIRDataToSend->rawCode, aIRDataToSend->rawCodeLength, 38);
-
-    //     Serial.print(F("Sent raw "));
-    //     Serial.print(aIRDataToSend->rawCodeLength);
-    //     Serial.println(F(" marks or spaces"));
-    // } else {
-
-    //     /*
-    //      * Use the write function, which does the switch for different protocols
-    //      */
-    //     IrSender.write(&aIRDataToSend->receivedIRData, NO_REPEATS);
-    //     delay(500);
-    //     IrSender.write(&aIRDataToSend->receivedIRData, NO_REPEATS);
-    //     delay(500);
-    //     IrSender.write(&aIRDataToSend->receivedIRData, NO_REPEATS);
-
-    //     Serial.print(F("Sent: "));
-    //     printIRResultShort(&Serial, &aIRDataToSend->receivedIRData);
-    // }
+    sendCode(sAddress, 0x99);
 }
