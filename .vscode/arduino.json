@@ -1,5 +1,0 @@
-{
-    "sketch": "sketch_may29b/sketch_may29b.ino",
-    "board": "arduino:avr:uno",
-    "port": "/dev/tty.usbmodem14201"
-}
