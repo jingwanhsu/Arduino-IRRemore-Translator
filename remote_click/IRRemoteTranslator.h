@@ -66,6 +66,7 @@ struct IRCodeSet {
 };
 
 struct TranslateIRCode {
+  char* name;
   IRCode original;
   IRCodeSet translation;
 };
@@ -111,7 +112,9 @@ void IRTranslator::translate(TranslateIRCode translateIRCode) {
   }
   if (IrReceiver.decodedIRData.address == translateIRCode.original.address &&
       IrReceiver.decodedIRData.command == translateIRCode.original.command) {
-    Serial.println(F("Data matched! Now sending..."));
+    Serial.print(F("Received data matches "));
+    Serial.println(translateIRCode.name);
+    Serial.println(F("Start sending..."));
     digitalWrite(STATUS_PIN, HIGH);
     sendCodeSet(translateIRCode.translation);
     digitalWrite(STATUS_PIN, LOW);

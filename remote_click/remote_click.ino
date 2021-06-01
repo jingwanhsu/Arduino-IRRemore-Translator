@@ -101,6 +101,7 @@ void setup() {
 void loop() {
   IrTranslator.begin();
   IrTranslator.translate({
+      .name = "Hulu Subtitles",
       .original = {.address = 0xEF00, .command = 0x1A},
       .translation =
           {
