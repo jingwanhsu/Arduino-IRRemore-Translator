@@ -1,0 +1,9 @@
+#define CD_REMOTE_ADDRESS   0xEF00
+#define CD_REMOTE_TOP_LEFT  0x1A
+#define CD_REMOTE_TOP_RIGHT 0x19
+#define CD_REMOTE_UP        0x00
+#define CD_REMOTE_DOWN      0x04
+#define CD_REMOTE_LEFT      0x01
+#define CD_REMOTE_RIGHT     0x02
+#define CD_REMOTE_OK        0x03
+#define CD_REMOTE_STOP      0x16

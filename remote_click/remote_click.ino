@@ -49,6 +49,7 @@
 /*
  * Define macros for input and output pin etc.
  */
+#include "IRCodeCDPlayerRemote.h"
 #include "IRCodeTVRemote.h"
 #include "IRRemoteTranslator.h"
 #include "PinDefinitionsAndMore.h"
@@ -102,7 +103,7 @@ void loop() {
   IrTranslator.begin();
   IrTranslator.translate({
       .name = "Hulu Subtitles",
-      .original = {.address = 0xEF00, .command = 0x1A},
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_TOP_LEFT},
       .translation =
           {
               .length = 7,
@@ -128,6 +129,104 @@ void loop() {
                        .delay = 300},
                       {.code = {.address = TV_REMOTE_ADDRESS,
                                 .command = TV_REMOTE_UP},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Up",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_UP},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_UP},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Down",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_DOWN},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_DOWN},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Left",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_LEFT},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_LEFT},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Right",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_RIGHT},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_RIGHT},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV OK",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_OK},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_OK},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Back",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_STOP},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_BACK},
+                       .delay = 0},
+                  },
+          },
+  });
+  IrTranslator.translate({
+      .name = "TV Mute",
+      .original = {.address = CD_REMOTE_ADDRESS, .command = CD_REMOTE_TOP_RIGHT},
+      .translation =
+          {
+              .length = 1,
+              .codeInfos =
+                  {
+                      {.code = {.address = TV_REMOTE_ADDRESS,
+                                .command = TV_REMOTE_MUTE},
                        .delay = 0},
                   },
           },
