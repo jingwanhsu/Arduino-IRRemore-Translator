@@ -1,7 +1,7 @@
 /*
  * IRRemoteTranslator.h
  *
- * Translater incoming IR signal to a set of outgoing IR signals
+ * Translate incoming IR signal to a set of outgoing IR signals
  * The logic is:
  * Define the original signal you want to translate
  * Define the set of translated signals with delay in between
